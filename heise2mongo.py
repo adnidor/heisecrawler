@@ -86,7 +86,8 @@ for article in collection.find():
 
     article['parsed'] = parsed
     if not pymongoversion.startswith("3"):
-        collection.replace({"_id":article['_id']},article)
+        collection.remove({"_id":article['_id']})
+        collection.insert(article)
     else:
         collection.replace_one({"_id":article['_id']},article)
         
