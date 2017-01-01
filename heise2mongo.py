@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import feedparser
 from pprint import pprint
-from pymongo import MongoClient
+from pymongo import MongoClient,version as pymongoversion
 import urllib.request
 import datetime
 import os
@@ -85,4 +85,8 @@ for article in collection.find():
     parsed['text_author'] = soup.find(class_="author").string if soup.find(class_="author") else None
 
     article['parsed'] = parsed
-    collection.replace_one({"_id":article['_id']},article)
+    if not pymongoversion.startswith("3"):
+        collection.replace({"_id":article['_id']},article)
+    else:
+        collection.replace_one({"_id":article['_id']},article)
+        
