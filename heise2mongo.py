@@ -3,6 +3,7 @@ import feedparser
 from pprint import pprint
 from pymongo import MongoClient,version as pymongoversion
 import urllib.request
+from urllib.error import HTTPError,URLError
 import datetime
 import os
 from bson.objectid import ObjectId
@@ -40,9 +41,8 @@ feed = feedparser.parse(rssfile)
 
 indexobject['feed'] = feed.feed
 indexobject['rssfile'] = rssfile
-index_collection.insert(indexobject)
 
-collection = database[str(oid)]
+articles = []
 
 for item in feed['items']:
     try:
@@ -52,11 +52,11 @@ for item in feed['items']:
         urllib.request.urlretrieve(item['link'],htmlfile)
         dbitem['feeditem'] = item
         dbitem['htmlfile'] = htmlfile
-        collection.insert(dbitem)
-    except HTTPError:
+        articles.append(dbitem)
+        #collection.insert(dbitem)
+    except (HTTPError,URLError):
         print(traceback.format_exc())
         
-
 # we fetched all articles, now we're parsing them
 
 def get_number_of_comments(soup):
@@ -76,7 +76,7 @@ def get_meta_author(soup):
     authors = [ x.strip() for x in re.split('und|,', fieldvalue) ]
     return authors
 
-for article in collection.find():
+for article in articles:
     with open(article['htmlfile']) as htmlfile:
         html = htmlfile.read()
     soup = BeautifulSoup(html, "html.parser")
@@ -88,9 +88,11 @@ for article in collection.find():
     parsed['text_author'] = soup.find(class_="author").string if soup.find(class_="author") else None
 
     article['parsed'] = parsed
-    if not pymongoversion.startswith("3"):
-        collection.remove({"_id":article['_id']})
-        collection.insert(article)
-    else:
-        collection.replace_one({"_id":article['_id']},article)
+    #if not pymongoversion.startswith("3"):
+    #    collection.remove({"_id":article['_id']})
+    #    collection.insert(article)
+    #else:
+    #    collection.replace_one({"_id":article['_id']},article)
         
+indexobject['articles'] = articles
+index_collection.insert(indexobject)
