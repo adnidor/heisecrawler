@@ -45,13 +45,17 @@ index_collection.insert(indexobject)
 collection = database[str(oid)]
 
 for item in feed['items']:
-    dbitem = {}
-    dbitem['_id'] = ObjectId()
-    htmlfile = basefolder+"/"+htmlfolder+"/"+str(dbitem['_id'])+".html"
-    urllib.request.urlretrieve(item['link'],htmlfile)
-    dbitem['feeditem'] = item
-    dbitem['htmlfile'] = htmlfile
-    collection.insert(dbitem)
+    try:
+        dbitem = {}
+        dbitem['_id'] = ObjectId()
+        htmlfile = basefolder+"/"+htmlfolder+"/"+str(dbitem['_id'])+".html"
+        urllib.request.urlretrieve(item['link'],htmlfile)
+        dbitem['feeditem'] = item
+        dbitem['htmlfile'] = htmlfile
+        collection.insert(dbitem)
+    except HTTPError:
+        print(traceback.format_exc())
+        
 
 # we fetched all articles, now we're parsing them
 
@@ -73,7 +77,6 @@ def get_meta_author(soup):
     return authors
 
 for article in collection.find():
-    print(article['_id'])
     with open(article['htmlfile']) as htmlfile:
         html = htmlfile.read()
     soup = BeautifulSoup(html, "html.parser")
